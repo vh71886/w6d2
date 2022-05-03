@@ -6,6 +6,7 @@ require 'active_support/inflector'
 class SQLObject
   def self.columns
     return @column if @column
+    
     @column = DBConnection.execute2(<<-SQL)
       SELECT
         *
@@ -16,6 +17,17 @@ class SQLObject
   end
 
   def self.finalize!
+    self.columns.each do |method|
+      # getter
+      define_method("#{method}") do
+        self.attributes[method]
+      end
+
+      # setter
+      define_method("#{method}=") do |val|
+        self.attributes[method] = val
+      end
+    end
   end
 
   def self.table_name=(table_name)
@@ -43,7 +55,7 @@ class SQLObject
   end
 
   def attributes
-    # ...
+    @attributes ||= {}
   end
 
   def attribute_values
